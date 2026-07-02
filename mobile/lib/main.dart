@@ -101,7 +101,11 @@ class ApiClient {
   Future<Uint8List> getBytes(String path) async {
     final response = await http
         .get(Uri.parse('$baseUrl$path'), headers: headers)
-        .timeout(timeout);
+        .timeout(
+          timeout,
+          onTimeout: () =>
+              throw TimeoutException('Tempo esgotado ao comunicar com a API'),
+        );
     if (response.statusCode >= 400) {
       final body = response.body.isEmpty ? null : jsonDecode(response.body);
       final message = body is Map
@@ -143,7 +147,11 @@ class ApiClient {
   }
 
   Future<dynamic> _send(Future<http.Response> call) async {
-    final response = await call.timeout(timeout);
+    final response = await call.timeout(
+      timeout,
+      onTimeout: () =>
+          throw TimeoutException('Tempo esgotado ao comunicar com a API'),
+    );
     final data = response.body.isEmpty ? null : jsonDecode(response.body);
     if (response.statusCode >= 400) {
       final message = data is Map
@@ -656,7 +664,7 @@ class _CobrancasViewState extends State<CobrancasView> {
   Future<void> _gerarPdf(Map<String, dynamic> item) async {
     final id = int.parse('${item['id']}');
     setState(() => pdfLoadingId = id);
-    await guarded(context, () async {
+    try {
       final bytes = await widget.api.getBytes(
         '/cobrancas/${item['id']}/boleto.pdf',
       );
@@ -666,8 +674,11 @@ class _CobrancasViewState extends State<CobrancasView> {
       await file.writeAsBytes(bytes, flush: true);
       if (!mounted) return;
       showSnack(context, 'PDF gerado: ${file.path}');
-    });
-    if (mounted) setState(() => pdfLoadingId = null);
+    } catch (error) {
+      if (mounted) showSnack(context, error.toString());
+    } finally {
+      if (mounted) setState(() => pdfLoadingId = null);
+    }
   }
 
   Future<void> _marcarComoPago(Map<String, dynamic> item) async {
@@ -689,6 +700,7 @@ class _CobrancasViewState extends State<CobrancasView> {
       ),
     );
     if (confirmado != true) return;
+    if (!mounted) return;
 
     await guarded(
       context,
@@ -1178,11 +1190,11 @@ class _FuturePanelState extends State<FuturePanel> {
       future: future,
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
-          return const Center(
+          return Center(
             child: Semantics(
               label: 'Carregando dados',
               liveRegion: true,
-              child: CircularProgressIndicator(),
+              child: const CircularProgressIndicator(),
             ),
           );
         }
