@@ -1,0 +1,17 @@
+name: sga_backend
+description: API REST do Sistema de Gerenciamento de Associacao.
+version: 1.0.0
+
+environment:
+  sdk: ^3.12.0
+
+dependencies:
+  crypto: ^3.0.6
+  dart_jsonwebtoken: ^3.3.1
+  mysql_client: ^0.0.27
+  shelf: ^1.4.2
+  shelf_router: ^1.1.4
+
+dev_dependencies:
+  lints: ^6.0.0
+  test: ^1.26.0

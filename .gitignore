@@ -1,0 +1,9 @@
+.dart_tool/
+build/
+.idea/
+.vscode/
+*.iml
+.env
+android/local.properties
+.DS_Store
+Thumbs.db

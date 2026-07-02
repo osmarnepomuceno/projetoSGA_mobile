@@ -1,0 +1,23 @@
+services:
+  mysql-db:
+    image: mysql:8.0
+    container_name: sga-mysql
+    restart: always
+    environment:
+      MYSQL_DATABASE: sga_db
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_USER: sga_user
+      MYSQL_PASSWORD: sga_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./docker/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  mysql_data:

@@ -1,0 +1,80 @@
+CREATE DATABASE IF NOT EXISTS sga_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE sga_db;
+
+CREATE TABLE IF NOT EXISTS tb_usuario (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  nome VARCHAR(120) NOT NULL,
+  email VARCHAR(160) NOT NULL UNIQUE,
+  senha_hash VARCHAR(255) NOT NULL,
+  perfil ENUM('ADMINISTRADOR','ATENDENTE') NOT NULL,
+  ativo BOOLEAN NOT NULL DEFAULT TRUE,
+  criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  atualizado_em DATETIME NULL
+);
+
+CREATE TABLE IF NOT EXISTS tb_associacao (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  nome VARCHAR(160) NOT NULL,
+  cnpj VARCHAR(20) NULL UNIQUE,
+  endereco VARCHAR(255) NULL,
+  telefone VARCHAR(30) NULL,
+  email VARCHAR(160) NULL,
+  criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  atualizado_em DATETIME NULL
+);
+
+CREATE TABLE IF NOT EXISTS tb_associado (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  nome VARCHAR(120) NOT NULL,
+  cpf VARCHAR(14) NOT NULL UNIQUE,
+  telefone VARCHAR(30) NULL,
+  email VARCHAR(160) NULL,
+  endereco VARCHAR(255) NULL,
+  data_filiacao DATE NOT NULL,
+  status ENUM('ATIVO','INATIVO','INADIMPLENTE') NOT NULL DEFAULT 'ATIVO',
+  criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  atualizado_em DATETIME NULL
+);
+
+CREATE TABLE IF NOT EXISTS tb_cobranca (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  associado_id BIGINT NOT NULL,
+  valor DECIMAL(10,2) NOT NULL,
+  data_vencimento DATE NOT NULL,
+  data_pagamento DATE NULL,
+  status ENUM('ABERTA','PAGA','VENCIDA','CANCELADA') NOT NULL DEFAULT 'ABERTA',
+  criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  atualizado_em DATETIME NULL,
+  CONSTRAINT fk_cobranca_associado FOREIGN KEY (associado_id) REFERENCES tb_associado(id)
+);
+
+CREATE TABLE IF NOT EXISTS tb_carteirinha (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  associado_id BIGINT NOT NULL,
+  data_emissao DATE NOT NULL,
+  data_validade DATE NOT NULL,
+  arquivo_url VARCHAR(255) NULL,
+  criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_carteirinha_associado FOREIGN KEY (associado_id) REFERENCES tb_associado(id)
+);
+
+CREATE TABLE IF NOT EXISTS tb_auditoria (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  usuario_id BIGINT NULL,
+  acao VARCHAR(80) NOT NULL,
+  entidade VARCHAR(80) NOT NULL,
+  entidade_id BIGINT NULL,
+  detalhes TEXT NULL,
+  criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_auditoria_usuario FOREIGN KEY (usuario_id) REFERENCES tb_usuario(id)
+);
+
+INSERT INTO tb_usuario (nome, email, senha_hash, perfil, ativo)
+SELECT 'Administrador Inicial', 'admin@sga.com',
+       '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9',
+       'ADMINISTRADOR', TRUE
+WHERE NOT EXISTS (SELECT 1 FROM tb_usuario WHERE email = 'admin@sga.com');
+
+INSERT INTO tb_associacao (nome)
+SELECT 'Associacao'
+WHERE NOT EXISTS (SELECT 1 FROM tb_associacao);
